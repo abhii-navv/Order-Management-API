@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api';
+import '../styles/auth.css';
 
 export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       const res = await api.post('/auth/login', form);
       localStorage.setItem('token', res.data.token);
@@ -16,6 +19,8 @@ export default function Login() {
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -28,7 +33,7 @@ export default function Login() {
         <form onSubmit={handleSubmit}>
           <input className="input" type="email" placeholder="Email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} required />
           <input className="input" type="password" placeholder="Password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} required />
-          <button className="btn" type="submit">Sign In</button>
+          <button className="btn" type="submit" disabled={loading}>{loading ? 'Signing in...' : 'Sign In'}</button>
         </form>
         <p>No account? <Link to="/register">Register</Link></p>
       </div>
