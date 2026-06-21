@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api';
+import '../styles/table.css';
 
 export default function Products() {
   const [products, setProducts] = useState([]);
@@ -70,15 +71,18 @@ export default function Products() {
           </form>
         )}
 
-        <table className="table">
+<table className="table">
           <thead><tr><th>Name</th><th>SKU</th><th>Price</th><th>Stock</th><th>Threshold</th>{user.role==='admin'&&<th>Actions</th>}</tr></thead>
           <tbody>
+            {products.length === 0 && (
+              <tr><td colSpan={user.role==='admin' ? 6 : 5} className="empty-row">No products found.</td></tr>
+            )}
             {products.map(p => (
               <tr key={p.id}>
                 <td>{p.name}</td>
                 <td>{p.sku}</td>
                 <td>₹{Number(p.price).toFixed(2)}</td>
-                <td style={{color: p.stock_quantity <= p.low_stock_threshold ? 'red' : 'green'}}>{p.stock_quantity}</td>
+                <td><span className={p.stock_quantity <= p.low_stock_threshold ? 'stock-low' : 'stock-ok'}>{p.stock_quantity}</span></td>
                 <td>{p.low_stock_threshold}</td>
                 {user.role==='admin' && <td>
                   <button className="btn-sm" onClick={() => setRestockId(p.id)}>Restock</button>
