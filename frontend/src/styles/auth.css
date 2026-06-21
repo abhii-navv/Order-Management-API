@@ -1,0 +1,14 @@
+.center-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+
+.card {
+  background: #fff;
+  padding: 36px 32px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  width: 380px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+.card h2 { text-align: center; margin-bottom: 4px; color: var(--primary-dark); }
+.card h3 { text-align: center; font-weight: 400; color: var(--text-light); margin-bottom: 22px; font-size: 15px; }
+.card p { text-align: center; margin-top: 16px; color: var(--text-light); font-size: 13px; }
+.card p a { color: var(--primary); font-weight: 500; }
