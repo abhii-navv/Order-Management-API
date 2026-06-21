@@ -1,0 +1,14 @@
+.badge {
+  padding: 3px 11px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+  letter-spacing: 0.01em;
+}
+.badge-pending   { background: #fef3c7; color: #b45309; }
+.badge-confirmed { background: #dbeafe; color: #1d4ed8; }
+.badge-packed    { background: #ede9fe; color: #6d28d9; }
+.badge-shipped   { background: #cffafe; color: #0e7490; }
+.badge-delivered { background: #dcfce7; color: #15803d; }
+.badge-cancelled { background: #fee2e2; color: #dc2626; }
