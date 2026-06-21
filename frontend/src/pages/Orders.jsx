@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api';
+import '../styles/table.css';
+import '../styles/badges.css';
 
 const NEXT = { pending:'confirmed', confirmed:'packed', packed:'shipped', shipped:'delivered' };
 
@@ -68,6 +70,9 @@ export default function Orders() {
         <table className="table">
           <thead><tr><th>#</th>{user.role==='admin'&&<th>Customer</th>}<th>Status</th><th>Total</th><th>Date</th>{user.role==='admin'&&<th>Actions</th>}</tr></thead>
           <tbody>
+            {orders.length === 0 && (
+              <tr><td colSpan={user.role==='admin' ? 6 : 4} className="empty-row">No orders yet.</td></tr>
+            )}
             {orders.map(o => (
               <tr key={o.id}>
                 <td>{o.id}</td>
