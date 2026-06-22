@@ -20,6 +20,26 @@ export default function Dashboard() {
   }, []);
 
   const logout = () => { localStorage.clear(); navigate('/login'); };
+  
+  
+  {recentOrders.length > 0 && (
+          <div>
+            <h3>🕑 Recent Orders</h3>
+            <table className="table">
+              <thead><tr><th>#</th><th>Status</th><th>Total</th><th>Date</th></tr></thead>
+              <tbody>
+                {recentOrders.map(o => (
+                  <tr key={o.id}>
+                    <td>{o.id}</td>
+                    <td>{o.status}</td>
+                    <td>₹{Number(o.total_amount).toFixed(2)}</td>
+                    <td>{new Date(o.created_at).toLocaleDateString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
   return (
     <div>
