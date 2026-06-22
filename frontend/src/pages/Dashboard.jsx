@@ -5,13 +5,18 @@ import '../styles/table.css';
 
 export default function Dashboard() {
   const [lowStock, setLowStock] = useState([]);
+  const [lowStock, setLowStock] = useState([]);
+  const [recentOrders, setRecentOrders] = useState([]);
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const navigate = useNavigate();
+  
 
   useEffect(() => {
     if (user.role === 'admin') {
       api.get('/reports/low-stock').then(r => setLowStock(r.data.products || []));
     }
+    const ordersEndpoint = user.role === 'admin' ? '/orders' : '/orders/my';
+    api.get(ordersEndpoint).then(r => setRecentOrders((r.data.orders || []).slice(0, 5)));
   }, []);
 
   const logout = () => { localStorage.clear(); navigate('/login'); };
