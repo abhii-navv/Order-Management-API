@@ -41,7 +41,12 @@ export default function Orders() {
     <div>
       <nav className="navbar">
         <span>📦 Inventory Manager</span>
-        <div><Link to="/">Dashboard</Link> <Link to="/products">Products</Link></div>
+        <div>
+          <Link to="/">Dashboard</Link> 
+          <Link to="/products">Products</Link>
+          <Link to="/categories">Categories</Link>
+          <Link to="/orders" className="active-link">Orders</Link>
+        </div>
       </nav>
       <div className="container">
         <h2>Orders</h2>
