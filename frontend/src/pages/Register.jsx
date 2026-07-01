@@ -15,7 +15,12 @@ export default function Register() {
       localStorage.setItem('user', JSON.stringify(res.data.user));
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
+      const validationErrors = err.response?.data?.errors;
+      if (validationErrors && Array.isArray(validationErrors)) {
+        setError(validationErrors.map(e => e.msg).join(', '));
+      } else {
+        setError(err.response?.data?.message || 'Registration failed');
+      }
     }
   };
 
