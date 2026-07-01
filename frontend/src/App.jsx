@@ -3,7 +3,9 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
+import Categories from './pages/Categories';
 import Orders from './pages/Orders';
+import AuditLogs from './pages/AuditLogs';
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -14,12 +16,14 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login"    element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/"         element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
-        <Route path="/orders"   element={<ProtectedRoute><Orders /></ProtectedRoute>} />
-        <Route path="*"         element={<Navigate to="/" replace />} />
+        <Route path="/login"      element={<Login />} />
+        <Route path="/register"   element={<Register />} />
+        <Route path="/"           element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/products"   element={<ProtectedRoute><Products /></ProtectedRoute>} />
+        <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
+        <Route path="/orders"     element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+        <Route path="/audit-logs" element={<ProtectedRoute><AuditLogs /></ProtectedRoute>} />
+        <Route path="*"           element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
