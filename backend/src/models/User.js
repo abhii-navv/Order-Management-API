@@ -10,6 +10,7 @@ const createUser = async ({ name, email, password, role = 'user' }) => {
 };
 
 const findUserByEmail = async (email) => {
+  // Return full row (including hashed password) for authentication purposes
   const result = await pool.query(
     `SELECT * FROM users WHERE email = $1`, [email]
   );
@@ -17,10 +18,24 @@ const findUserByEmail = async (email) => {
 };
 
 const findUserById = async (id) => {
+  // Exclude password from general profile lookups
   const result = await pool.query(
     `SELECT id, name, email, role, created_at FROM users WHERE id = $1`, [id]
   );
   return result.rows[0];
 };
 
-module.exports = { createUser, findUserByEmail, findUserById };
+/**
+ * Update a user's hashed password.
+ * Called after change-password validation — assumes newHashedPassword is already bcrypt-hashed.
+ 
+ */
+const updateUserPassword = async (id, newHashedPassword) => {
+  const result = await pool.query(
+    `UPDATE users SET password = $1 WHERE id = $2 RETURNING id, name, email, role, created_at`,
+    [newHashedPassword, id]
+  );
+  return result.rows[0];
+};
+
+module.exports = { createUser, findUserByEmail, findUserById, updateUserPassword };
