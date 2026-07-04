@@ -137,4 +137,3 @@ const isValidTransition = (current, next) => {
 };
 
 module.exports = { getAllOrders, getOrderById, createOrder, updateOrderStatus, isValidTransition };
-
