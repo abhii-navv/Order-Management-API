@@ -4,24 +4,26 @@ import api from '../api';
 import '../styles/table.css';
 
 export default function Products() {
-  const [products, setProducts]               = useState([]);
-  const [categories, setCategories]           = useState([]);
-  const [search, setSearch]                   = useState('');
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [form, setForm]                       = useState({ name: '', sku: '', price: '', stock_quantity: '', low_stock_threshold: 10, category_id: '', description: '' });
-  const [showForm, setShowForm]               = useState(false);
-  const [restockId, setRestockId]             = useState(null);
-  const [restockQty, setRestockQty]           = useState('');
-  const [editId, setEditId]                   = useState(null);
-  const [editData, setEditData]               = useState({});
-  const [loading, setLoading]                 = useState(false);
-  const [error, setError]                     = useState('');
-  const [success, setSuccess]                 = useState('');
+  const [form, setForm] = useState({ name: '', sku: '', price: '', stock_quantity: '', low_stock_threshold: 10, category_id: '', description: '' });
+  const [showForm, setShowForm] = useState(false);
+  const [restockId, setRestockId] = useState(null);
+  const [restockQty, setRestockQty] = useState('');
+  const [editId, setEditId] = useState(null);
+  const [editData, setEditData] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [orderQty, setOrderQty] = useState({});   // { [productId]: quantity }
+  const [orderingId, setOrderingId] = useState(null); // product id currently being ordered
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   // Auto-dismiss error & success after 4s
   useEffect(() => {
-    if (error)   { const t = setTimeout(() => setError(''),   4000); return () => clearTimeout(t); }
+    if (error) { const t = setTimeout(() => setError(''), 4000); return () => clearTimeout(t); }
   }, [error]);
   useEffect(() => {
     if (success) { const t = setTimeout(() => setSuccess(''), 3000); return () => clearTimeout(t); }
@@ -109,6 +111,23 @@ export default function Products() {
     }
   };
 
+  // ── Place Order (non-admin, direct from product row) ───
+  const handlePlaceOrder = async (product) => {
+    const quantity = Number(orderQty[product.id]) || 1;
+    if (quantity < 1) return;
+    setOrderingId(product.id);
+    try {
+      await api.post('/orders', { items: [{ product_id: product.id, quantity }] });
+      setSuccess(`✅ Order placed for ${quantity} × "${product.name}".`);
+      setOrderQty({ ...orderQty, [product.id]: '' });
+      fetchProducts();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to place order');
+    } finally {
+      setOrderingId(null);
+    }
+  };
+
   const restockingProduct = products.find(p => p.id === restockId);
   const lowStockCount = products.filter(p => p.stock_quantity <= p.low_stock_threshold).length;
 
@@ -147,7 +166,7 @@ export default function Products() {
         </div>
 
         {/* ── Toast Messages ── */}
-        {error   && <p className="error"  style={{ marginTop: '10px' }}>{error}</p>}
+        {error && <p className="error" style={{ marginTop: '10px' }}>{error}</p>}
         {success && (
           <p style={{ color: '#16a34a', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '9px 14px', borderRadius: '8px', marginTop: '10px', marginBottom: '4px', fontSize: '13px' }}>
             {success}
@@ -241,7 +260,7 @@ export default function Products() {
                 <th>Price</th>
                 <th>Stock</th>
                 <th>Threshold</th>
-                {user.role === 'admin' && <th>Actions</th>}
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -311,11 +330,37 @@ export default function Products() {
                         </span>
                       </td>
                       <td style={{ color: 'var(--text-light)' }}>{p.low_stock_threshold}</td>
-                      {user.role === 'admin' && (
+                      {user.role === 'admin' ? (
                         <td style={{ whiteSpace: 'nowrap' }}>
                           <button className="btn-sm" onClick={() => startEdit(p)} style={{ marginRight: '5px' }}>Edit</button>
                           <button className="btn-sm" onClick={() => { setRestockId(p.id); setShowForm(false); }} style={{ marginRight: '5px' }}>Restock</button>
                           <button className="btn-sm btn-danger" onClick={() => handleDelete(p.id, p.name)}>Delete</button>
+                        </td>
+                      ) : (
+                        <td style={{ whiteSpace: 'nowrap' }}>
+                          {p.stock_quantity <= 0 ? (
+                            <span style={{ color: 'var(--text-light)', fontSize: '12px' }}>Out of stock</span>
+                          ) : (
+                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                              <input
+                                className="input"
+                                type="number"
+                                min="1"
+                                max={p.stock_quantity}
+                                placeholder="Qty"
+                                value={orderQty[p.id] ?? ''}
+                                onChange={e => setOrderQty({ ...orderQty, [p.id]: e.target.value })}
+                                style={{ marginBottom: 0, padding: '6px 8px', width: '60px' }}
+                              />
+                              <button
+                                className="btn-sm"
+                                disabled={orderingId === p.id}
+                                onClick={() => handlePlaceOrder(p)}
+                              >
+                                {orderingId === p.id ? 'Ordering...' : 'Order'}
+                              </button>
+                            </div>
+                          )}
                         </td>
                       )}
                     </>
