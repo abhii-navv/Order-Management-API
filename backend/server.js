@@ -2,12 +2,13 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const createTables = require('./src/config/createTables');
+const seedData = require('./src/config/seedData');
 
-const authRoutes      = require('./src/routes/authRoutes');
-const categoryRoutes  = require('./src/routes/categoryRoutes');
-const productRoutes   = require('./src/routes/productRoutes');
-const orderRoutes     = require('./src/routes/orderRoutes');
-const reportRoutes    = require('./src/routes/reportRoutes');
+const authRoutes = require('./src/routes/authRoutes');
+const categoryRoutes = require('./src/routes/categoryRoutes');
+const productRoutes = require('./src/routes/productRoutes');
+const orderRoutes = require('./src/routes/orderRoutes');
+const reportRoutes = require('./src/routes/reportRoutes');
 
 const app = express();
 
@@ -44,14 +45,14 @@ app.use(cors({
 
 // ── In-memory rate limiter (no external dep) ──────────────────────────────────
 // Limits each IP to MAX_REQUESTS per WINDOW_MS to guard against brute-force / DoS
-const WINDOW_MS    = parseInt(process.env.RATE_WINDOW_MS  || '60000', 10); // 1 min
-const MAX_REQUESTS = parseInt(process.env.RATE_MAX_REQUESTS || '100',  10);
-const ipHits       = new Map();
+const WINDOW_MS = parseInt(process.env.RATE_WINDOW_MS || '60000', 10); // 1 min
+const MAX_REQUESTS = parseInt(process.env.RATE_MAX_REQUESTS || '100', 10);
+const ipHits = new Map();
 
 setInterval(() => ipHits.clear(), WINDOW_MS); // flush window every interval
 
 app.use((req, res, next) => {
-  const ip    = req.ip || req.socket.remoteAddress || 'unknown';
+  const ip = req.ip || req.socket.remoteAddress || 'unknown';
   const count = (ipHits.get(ip) || 0) + 1;
   ipHits.set(ip, count);
   if (count > MAX_REQUESTS) {
@@ -78,11 +79,11 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // ── API Routes ─────────────────────────────────────────────────────────────────
-app.use('/api/v1/auth',       authRoutes);
+app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/categories', categoryRoutes);
-app.use('/api/v1/products',   productRoutes);
-app.use('/api/v1/orders',     orderRoutes);
-app.use('/api/v1/reports',    reportRoutes);
+app.use('/api/v1/products', productRoutes);
+app.use('/api/v1/orders', orderRoutes);
+app.use('/api/v1/reports', reportRoutes);
 
 // ── Health Check ───────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
@@ -102,7 +103,7 @@ app.use((req, res) => {
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
   const status = err.status || 500;
-  const isDev  = process.env.NODE_ENV !== 'production';
+  const isDev = process.env.NODE_ENV !== 'production';
   console.error(`[ERROR ${status}]`, err.message);
   if (isDev) console.error(err.stack);
   res.status(status).json({
@@ -116,6 +117,7 @@ const PORT = process.env.PORT || 5000;
 
 const start = async () => {
   await createTables();
+  await seedData();
   app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
     console.log(`🛡️  CORS allowed origins: ${ALLOWED_ORIGINS.join(', ')}`);
