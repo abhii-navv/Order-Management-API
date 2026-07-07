@@ -1,14 +1,86 @@
 .badge {
-  padding: 3px 11px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: capitalize;
-  letter-spacing: 0.01em;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
 }
-.badge-pending   { background: #fef3c7; color: #b45309; }
-.badge-confirmed { background: #dbeafe; color: #1d4ed8; }
-.badge-packed    { background: #ede9fe; color: #6d28d9; }
-.badge-shipped   { background: #cffafe; color: #0e7490; }
-.badge-delivered { background: #dcfce7; color: #15803d; }
-.badge-cancelled { background: #fee2e2; color: #dc2626; }
+
+.badge::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+/* Pending: Orange/Amber */
+.badge-pending {
+  background: rgba(245, 158, 11, 0.1);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.2);
+}
+.badge-pending::before {
+  background: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b;
+}
+
+/* Confirmed: Blue */
+.badge-confirmed {
+  background: rgba(59, 130, 246, 0.1);
+  color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.2);
+}
+.badge-confirmed::before {
+  background: #3b82f6;
+  box-shadow: 0 0 8px #3b82f6;
+}
+
+/* Packed: Purple */
+.badge-packed {
+  background: rgba(139, 92, 246, 0.1);
+  color: #a78bfa;
+  border-color: rgba(139, 92, 246, 0.2);
+}
+.badge-packed::before {
+  background: #8b5cf6;
+  box-shadow: 0 0 8px #8b5cf6;
+}
+
+/* Shipped: Cyan/Teal */
+.badge-shipped {
+  background: rgba(6, 182, 212, 0.1);
+  color: #22d3ee;
+  border-color: rgba(6, 182, 212, 0.2);
+}
+.badge-shipped::before {
+  background: #06b6d4;
+  box-shadow: 0 0 8px #06b6d4;
+}
+
+/* Delivered: Green */
+.badge-delivered {
+  background: rgba(16, 185, 129, 0.1);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.2);
+}
+.badge-delivered::before {
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+/* Cancelled: Red */
+.badge-cancelled {
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.2);
+}
+.badge-cancelled::before {
+  background: #ef4444;
+  box-shadow: 0 0 8px #ef4444;
+}
