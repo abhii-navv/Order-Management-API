@@ -1,14 +1,94 @@
-.center-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+.center-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.center-page::before {
+  content: "";
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  background: rgba(139, 92, 246, 0.15);
+  border-radius: 50%;
+  filter: blur(80px);
+  top: 20%;
+  left: 25%;
+  z-index: 0;
+}
+
+.center-page::after {
+  content: "";
+  position: absolute;
+  width: 250px;
+  height: 250px;
+  background: rgba(99, 102, 241, 0.12);
+  border-radius: 50%;
+  filter: blur(60px);
+  bottom: 20%;
+  right: 25%;
+  z-index: 0;
+}
 
 .card {
-  background: #fff;
-  padding: 36px 32px;
-  border-radius: 12px;
+  background: var(--bg-surface);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  padding: 40px 36px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
-  width: 380px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  width: 100%;
+  max-width: 420px;
+  box-shadow: var(--shadow), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  position: relative;
+  z-index: 1;
 }
-.card h2 { text-align: center; margin-bottom: 4px; color: var(--primary-dark); }
-.card h3 { text-align: center; font-weight: 400; color: var(--text-light); margin-bottom: 22px; font-size: 15px; }
-.card p { text-align: center; margin-top: 16px; color: var(--text-light); font-size: 13px; }
-.card p a { color: var(--primary); font-weight: 500; }
+
+.card h2 {
+  text-align: center;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #c084fc 0%, var(--primary-light) 50%, var(--primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.card h3 {
+  text-align: center;
+  font-weight: 500;
+  color: var(--text-light);
+  margin-bottom: 28px;
+  font-size: 15px;
+  justify-content: center;
+}
+
+.card p {
+  text-align: center;
+  margin-top: 24px;
+  color: var(--text-light);
+  font-size: 14px;
+}
+
+.card p a {
+  color: var(--primary-light);
+  font-weight: 600;
+  text-decoration: none;
+  transition: var(--transition-fast);
+}
+
+.card p a:hover {
+  color: #ffffff;
+  text-shadow: 0 0 8px rgba(167, 139, 250, 0.6);
+}
+
+.card form button[type="submit"] {
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px;
+}
