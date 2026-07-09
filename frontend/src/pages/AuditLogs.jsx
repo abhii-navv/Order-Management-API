@@ -61,7 +61,7 @@ export default function AuditLogs() {
                 <tr key={log.id}>
                   <td>{new Date(log.changed_at).toLocaleString()}</td>
                   <td><strong>{log.product_name || `Product #${log.product_id}`}</strong></td>
-                  <td>{log.user_name || 'System'}</td>
+                  <td>{log.changed_by_name || 'System'}</td>
                   <td>{log.quantity_before}</td>
                   <td>{log.quantity_after}</td>
                   <td style={{ color: isPositive ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
