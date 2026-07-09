@@ -14,8 +14,8 @@ const orderValidation = [
     .isInt({ min: 1 })
     .withMessage('Valid product_id required'),
   body('items.*.quantity')
-    .isInt({ min: 1 })
-    .withMessage('Quantity must be a positive integer'),
+    .isInt({ min: 1, max: 1000 })
+    .withMessage('Quantity must be a positive integer (max 1000 per item'),
   body('notes')
     .optional()
     .isString()
