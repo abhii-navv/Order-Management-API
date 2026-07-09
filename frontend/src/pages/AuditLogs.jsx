@@ -3,23 +3,38 @@ import { Link } from 'react-router-dom';
 import api from '../api';
 import '../styles/table.css';
 
+const PAGE_SIZE = 20;
+
 export default function AuditLogs() {
   const [logs, setLogs] = useState([]);
   const [error, setError] = useState('');
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
 
-  const fetchLogs = async () => {
+  const fetchLogs = async (currentPage = 1) => {
+    setLoading(true);
+    setError('');
     try {
-      const res = await api.get('/reports/audit-log');
+      const res = await api.get('/reports/audit-log', {
+        params: { page: currentPage, limit: PAGE_SIZE },
+      });
       setLogs(res.data.logs || []);
+      setTotal(res.data.total ?? 0);
+      setTotalPages(res.data.totalPages ?? 1);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load audit logs');
+      setError(err.friendlyMessage || err.response?.data?.message || 'Failed to load audit logs');
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchLogs();
-  }, []);
+    fetchLogs(page);
+  }, [page]);
+
+  const goTo = (p) => setPage(Math.max(1, Math.min(p, totalPages)));
 
   return (
     <div>
@@ -36,7 +51,9 @@ export default function AuditLogs() {
       <div className="container">
         <h2>Stock Audit Logs</h2>
         {error && <p className="error">{error}</p>}
-        <p>A history of all stock additions, adjustments, and order reductions.</p>
+        <p style={{ color: 'var(--text-light)', marginBottom: '20px' }}>
+          A history of all stock additions, adjustments, and order reductions.
+        </p>
 
         <table className="table">
           <thead>
@@ -51,10 +68,13 @@ export default function AuditLogs() {
             </tr>
           </thead>
           <tbody>
-            {logs.length === 0 && (
+            {loading && (
+              <tr><td colSpan="7" className="empty-row">Loading…</td></tr>
+            )}
+            {!loading && logs.length === 0 && (
               <tr><td colSpan="7" className="empty-row">No audit logs found.</td></tr>
             )}
-            {logs.map(log => {
+            {!loading && logs.map(log => {
               const diff = log.quantity_after - log.quantity_before;
               const isPositive = diff > 0;
               return (
@@ -68,15 +88,16 @@ export default function AuditLogs() {
                     {isPositive ? `+${diff}` : diff}
                   </td>
                   <td>
-                    <span className="reason-label" style={{
+                    <span style={{
                       textTransform: 'capitalize',
-                      fontSize: '0.85em',
-                      padding: '2px 6px',
+                      fontSize: '0.82em',
+                      padding: '3px 8px',
                       borderRadius: '4px',
-                      backgroundColor: '#f3f4f6',
-                      color: '#374151'
+                      background: 'rgba(139,92,246,0.12)',
+                      color: '#a78bfa',
+                      fontWeight: 600,
                     }}>
-                      {log.reason.replace('_', ' ')}
+                      {log.reason.replaceAll('_', ' ')}
                     </span>
                   </td>
                 </tr>
@@ -84,6 +105,41 @@ export default function AuditLogs() {
             })}
           </tbody>
         </table>
+
+        {/* ── Pagination controls ── */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginTop: '20px',
+          color: 'var(--text-light)',
+          fontSize: '13px',
+        }}>
+          <span>
+            Showing {logs.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1}–{(page - 1) * PAGE_SIZE + logs.length} of {total} entries
+          </span>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              className="btn"
+              onClick={() => goTo(page - 1)}
+              disabled={page <= 1 || loading}
+              style={{ opacity: page <= 1 ? 0.4 : 1 }}
+            >
+              ← Prev
+            </button>
+            <span style={{ padding: '8px 12px', fontWeight: 600 }}>
+              Page {page} / {totalPages}
+            </span>
+            <button
+              className="btn"
+              onClick={() => goTo(page + 1)}
+              disabled={page >= totalPages || loading}
+              style={{ opacity: page >= totalPages ? 0.4 : 1 }}
+            >
+              Next →
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
