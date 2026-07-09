@@ -100,8 +100,14 @@ const salesSummary = async (req, res) => {
 const auditLog = async (req, res) => {
   try {
     const { product_id, page, limit } = req.query;
-    const logs = await getAuditLog({ product_id, page, limit });
-    res.json({ logs });
+    const result = await getAuditLog({ product_id, page, limit });
+    res.json({
+      logs: result.rows,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: result.totalPages,
+    });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
