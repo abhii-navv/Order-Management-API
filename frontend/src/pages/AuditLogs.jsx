@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../api';
 import '../styles/table.css';
 
+
 const PAGE_SIZE = 20;
 
 export default function AuditLogs() {
@@ -12,6 +13,12 @@ export default function AuditLogs() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+
+  // Auto-dismiss error after 4s
+  useEffect(() => {
+    if (error) { const t = setTimeout(() => setError(''), 4000); return () => clearTimeout(t); }
+  }, [error]);
+
 
   const fetchLogs = async (currentPage = 1) => {
     setLoading(true);
@@ -97,7 +104,7 @@ export default function AuditLogs() {
                       color: '#a78bfa',
                       fontWeight: 600,
                     }}>
-                      {log.reason.replaceAll('_', ' ')}
+                      {(log.reason || 'unknown').replaceAll('_', ' ')}
                     </span>
                   </td>
                 </tr>
