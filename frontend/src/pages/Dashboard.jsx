@@ -61,6 +61,7 @@ export default function Dashboard() {
           <Link to="/products">Products</Link>
           <Link to="/categories">Categories</Link>
           <Link to="/orders">Orders</Link>
+          {user.role === 'admin' && <Link to="/reports">Reports</Link>}
           {user.role === 'admin' && <Link to="/audit-logs">Audit Logs</Link>}
           <span style={{ color: 'var(--text-light)', fontSize: '13px' }}>| {user.name} ({user.role})</span>
           <button onClick={logout}>Logout</button>
@@ -122,6 +123,7 @@ export default function Dashboard() {
           <Link to="/products" className="btn">🏷️ Products</Link>
           <Link to="/categories" className="btn">📁 Categories</Link>
           <Link to="/orders" className="btn">📋 Orders</Link>
+          {user.role === 'admin' && <Link to="/reports" className="btn">📊 Reports</Link>}
           {user.role === 'admin' && <Link to="/audit-logs" className="btn">🔍 Audit Logs</Link>}
         </div>
 
@@ -209,3 +211,4 @@ export default function Dashboard() {
     </div>
   );
 }
+
