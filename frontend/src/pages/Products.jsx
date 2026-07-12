@@ -17,6 +17,9 @@ export default function Products() {
   const [editId, setEditId] = useState(null);
   const [editData, setEditData] = useState({});
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [orderQty, setOrderQty] = useState({});   // { [productId]: quantity }
@@ -31,13 +34,15 @@ export default function Products() {
     if (success) { const t = setTimeout(() => setSuccess(''), 3000); return () => clearTimeout(t); }
   }, [success]);
 
-  const fetchProducts = useCallback(async () => {
+  const fetchProducts = useCallback(async (currentPage = 1) => {
     setLoading(true);
     try {
       const res = await api.get('/products', {
-        params: { search, category_id: selectedCategory, sort_by: sortBy, sort_order: sortOrder, limit: 50 },
+        params: { search, category_id: selectedCategory, sort_by: sortBy, sort_order: sortOrder, page: currentPage, limit: 10 },
       });
       setProducts(res.data.products || []);
+      setTotal(res.data.total ?? 0);
+      setTotalPages(res.data.totalPages ?? 1);
     } catch (err) {
       setError(err.friendlyMessage || err.response?.data?.message || 'Failed to load products');
     } finally {
@@ -54,7 +59,7 @@ export default function Products() {
     }
   }, []);
 
-  useEffect(() => { fetchProducts(); }, [fetchProducts]);
+  useEffect(() => { fetchProducts(page); }, [fetchProducts, page]);
   useEffect(() => { fetchCategories(); }, [fetchCategories]);
 
   // Toggle sort column; if same column, flip direction
@@ -65,7 +70,11 @@ export default function Products() {
       setSortBy(col);
       setSortOrder('asc');
     }
+    setPage(1);
   };
+  
+  // Go to page
+  const goTo = (p) => setPage(Math.max(1, Math.min(p, totalPages)));
 
   const SortIcon = ({ col }) => {
     if (sortBy !== col) return <span style={{ opacity: 0.3, marginLeft: '4px' }}>↕</span>;
@@ -81,7 +90,7 @@ export default function Products() {
       setShowForm(false);
       setForm({ name: '', sku: '', price: '', stock_quantity: '', low_stock_threshold: 10, category_id: '', description: '' });
       setSuccess('✅ Product created successfully!');
-      fetchProducts();
+      fetchProducts(page);
     } catch (err) {
       setError(err.response?.data?.message || err.response?.data?.errors?.[0]?.msg || 'Failed to create product');
     }
@@ -93,7 +102,7 @@ export default function Products() {
     try {
       await api.delete(`/products/${id}`);
       setSuccess(`🗑️ "${name}" deleted.`);
-      fetchProducts();
+      fetchProducts(page);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to delete');
     }
@@ -109,7 +118,7 @@ export default function Products() {
       setRestockId(null);
       setRestockQty('');
       setSuccess(`📦 Stock updated by +${qty} units.`);
-      fetchProducts();
+      fetchProducts(page);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to restock');
     }
@@ -132,7 +141,7 @@ export default function Products() {
       await api.put(`/products/${id}`, payload);
       setEditId(null);
       setSuccess('✏️ Product updated successfully!');
-      fetchProducts();
+      fetchProducts(page);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update');
     }
@@ -151,7 +160,7 @@ export default function Products() {
       await api.post('/orders', { items: [{ product_id: product.id, quantity }] });
       setSuccess(`✅ Order placed for ${quantity} × "${product.name}".`);
       setOrderQty({ ...orderQty, [product.id]: '' });
-      fetchProducts();
+      fetchProducts(page);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to place order');
     } finally {
@@ -206,13 +215,13 @@ export default function Products() {
             className="input"
             placeholder="🔍  Search by name or SKU..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => { setSearch(e.target.value); setPage(1); }}
             style={{ flex: 2, marginBottom: 0, minWidth: '180px' }}
           />
           <select
             className="input"
             value={selectedCategory}
-            onChange={e => setSelectedCategory(e.target.value)}
+            onChange={e => { setSelectedCategory(e.target.value); setPage(1); }}
             style={{ flex: 1, marginBottom: 0, minWidth: '140px' }}
           >
             <option value="">All Categories</option>
@@ -369,7 +378,7 @@ export default function Products() {
                       </td>
                       <td>
                         {p.category_name
-                          ? <span style={{ background: '#ede9fe', color: '#6d28d9', padding: '2px 8px', borderRadius: '4px', fontSize: '12px' }}>{p.category_name}</span>
+                          ? <span style={{ background: 'rgba(139, 92, 246, 0.1)', color: '#a78bfa', padding: '2px 8px', borderRadius: '4px', fontSize: '12px' }}>{p.category_name}</span>
                           : <em style={{ color: '#bbb' }}>—</em>
                         }
                       </td>
@@ -421,6 +430,43 @@ export default function Products() {
               ))}
             </tbody>
           </table>
+        )}
+
+        {/* ── Pagination controls ── */}
+        {!loading && products.length > 0 && (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginTop: '20px',
+            color: 'var(--text-light)',
+            fontSize: '13px',
+          }}>
+            <span>
+              Showing {(page - 1) * 10 + 1}–{Math.min(page * 10, total)} of {total} products
+            </span>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                className="btn-outline btn-sm"
+                onClick={() => goTo(page - 1)}
+                disabled={page <= 1 || loading}
+                style={{ opacity: page <= 1 ? 0.4 : 1 }}
+              >
+                ← Prev
+              </button>
+              <span style={{ padding: '4px 8px', fontWeight: 600 }}>
+                Page {page} / {totalPages}
+              </span>
+              <button
+                className="btn-outline btn-sm"
+                onClick={() => goTo(page + 1)}
+                disabled={page >= totalPages || loading}
+                style={{ opacity: page >= totalPages ? 0.4 : 1 }}
+              >
+                Next →
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>
