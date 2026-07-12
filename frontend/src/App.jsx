@@ -6,6 +6,7 @@ import Products from './pages/Products';
 import Categories from './pages/Categories';
 import Orders from './pages/Orders';
 import AuditLogs from './pages/AuditLogs';
+import Reports from './pages/Reports';
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -22,6 +23,7 @@ export default function App() {
         <Route path="/products"   element={<ProtectedRoute><Products /></ProtectedRoute>} />
         <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
         <Route path="/orders"     element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+        <Route path="/reports"    element={<ProtectedRoute><Reports /></ProtectedRoute>} />
         <Route path="/audit-logs" element={<ProtectedRoute><AuditLogs /></ProtectedRoute>} />
         <Route path="*"           element={<Navigate to="/" replace />} />
       </Routes>
