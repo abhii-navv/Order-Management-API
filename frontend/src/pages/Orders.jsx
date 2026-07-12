@@ -11,6 +11,9 @@ export default function Orders() {
   const [products, setProducts] = useState([]);
   const [items, setItems] = useState([{ product_id:'', quantity:1 }]);
   const [showForm, setShowForm] = useState(false);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,11 +27,16 @@ export default function Orders() {
     if (success) { const t = setTimeout(() => setSuccess(''), 3000); return () => clearTimeout(t); }
   }, [success]);
 
-  const fetchOrders = useCallback(async () => {
+  const fetchOrders = useCallback(async (currentPage = 1) => {
     setLoading(true);
     try {
-      const res = await api.get(user.role === 'admin' ? '/orders' : '/orders/my');
+      const endpoint = user.role === 'admin' ? '/orders' : '/orders/my';
+      const res = await api.get(endpoint, {
+        params: { page: currentPage, limit: 10 }
+      });
       setOrders(res.data.orders || []);
+      setTotal(res.data.total ?? 0);
+      setTotalPages(res.data.totalPages ?? 1);
     } catch (err) {
       setError(err.friendlyMessage || err.response?.data?.message || 'Failed to load orders');
     } finally {
@@ -37,9 +45,11 @@ export default function Orders() {
   }, [user.role]);
 
   useEffect(() => {
-    fetchOrders();
+    fetchOrders(page);
     api.get('/products?limit=100').then(r => setProducts(r.data.products || [])).catch(() => {});
-  }, [fetchOrders]);
+  }, [fetchOrders, page]);
+
+  const goTo = (p) => setPage(Math.max(1, Math.min(p, totalPages)));
 
   const handlePlace = async (e) => {
     e.preventDefault();
@@ -50,7 +60,8 @@ export default function Orders() {
       setShowForm(false);
       setItems([{ product_id:'', quantity:1 }]);
       setSuccess('✅ Order placed successfully!');
-      fetchOrders();
+      fetchOrders(1);
+      setPage(1);
     } catch (err) {
       setError(err.friendlyMessage || err.response?.data?.message || 'Failed to place order');
     }
@@ -60,7 +71,7 @@ export default function Orders() {
     try {
       await api.patch(`/orders/${id}/status`, { status });
       setSuccess(`✅ Order #${id} moved to "${status}".`);
-      fetchOrders();
+      fetchOrders(page);
     } catch (err) {
       setError(err.friendlyMessage || err.response?.data?.message || 'Failed to update status');
     }
@@ -169,6 +180,43 @@ export default function Orders() {
               ))}
             </tbody>
           </table>
+        )}
+
+        {/* ── Pagination controls ── */}
+        {!loading && orders.length > 0 && (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginTop: '20px',
+            color: 'var(--text-light)',
+            fontSize: '13px',
+          }}>
+            <span>
+              Showing {(page - 1) * 10 + 1}–{Math.min(page * 10, total)} of {total} orders
+            </span>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                className="btn-outline btn-sm"
+                onClick={() => goTo(page - 1)}
+                disabled={page <= 1 || loading}
+                style={{ opacity: page <= 1 ? 0.4 : 1 }}
+              >
+                ← Prev
+              </button>
+              <span style={{ padding: '4px 8px', fontWeight: 600 }}>
+                Page {page} / {totalPages}
+              </span>
+              <button
+                className="btn-outline btn-sm"
+                onClick={() => goTo(page + 1)}
+                disabled={page >= totalPages || loading}
+                style={{ opacity: page >= totalPages ? 0.4 : 1 }}
+              >
+                Next →
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>
