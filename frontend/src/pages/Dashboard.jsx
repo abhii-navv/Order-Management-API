@@ -77,9 +77,14 @@ export default function Dashboard() {
               Here's what's happening with your inventory today.
             </p>
           </div>
-          {loading && (
-            <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>⏳ Loading…</span>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            {loading && (
+              <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>⏳ Loading…</span>
+            )}
+            <button className="btn btn-outline" onClick={loadDashboard} disabled={loading}>
+              🔄 Refresh
+            </button>
+          </div>
         </div>
 
         {error && <p className="error">{error}</p>}
@@ -211,4 +216,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
