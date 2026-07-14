@@ -106,3 +106,8 @@
   transform: none !important;
   box-shadow: none !important;
 }
+
+.btn:focus, .btn-outline:focus, .btn-sm:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.4);
+}
