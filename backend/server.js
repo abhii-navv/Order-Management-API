@@ -91,6 +91,7 @@ app.get('/', (req, res) => {
     message: '📦 Inventory & Order Management API is running',
     version: process.env.npm_package_version || '1.0.0',
     environment: process.env.NODE_ENV || 'development',
+    uptime: process.uptime(),
   });
 });
 
@@ -107,6 +108,7 @@ app.use((err, req, res, next) => {
   console.error(`[ERROR ${status}]`, err.message);
   if (isDev) console.error(err.stack);
   res.status(status).json({
+    error: err.name || 'Error',
     message: isDev ? err.message : 'Internal server error',
     ...(isDev && { stack: err.stack }),
   });
