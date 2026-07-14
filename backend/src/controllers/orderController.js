@@ -44,6 +44,7 @@ const getAll = async (req, res) => {
     const result = await getAllOrders({ status, user_id, page, limit });
     res.json(result); // now includes { orders, total, page, limit, totalPages }
   } catch (err) {
+    console.error('Order Error:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
@@ -54,6 +55,7 @@ const getMyOrders = async (req, res) => {
     const result = await getAllOrders({ user_id: req.user.id, page, limit, status });
     res.json(result);
   } catch (err) {
+    console.error('Order Error:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
@@ -66,6 +68,7 @@ const getOne = async (req, res) => {
       return res.status(403).json({ message: 'Access denied' });
     res.json({ order });
   } catch (err) {
+    console.error('Order Error:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
@@ -198,6 +201,7 @@ const updateStatus = async (req, res) => {
     res.json({ message: `Order status updated to "${status}"`, order: updated });
   } catch (err) {
     await client.query('ROLLBACK');
+    console.error('Order Error:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
   } finally {
     client.release();
