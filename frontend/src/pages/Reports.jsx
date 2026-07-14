@@ -11,26 +11,27 @@ export default function Reports() {
   const [error, setError] = useState('');
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-  useEffect(() => {
+  const fetchReports = async () => {
     if (user.role !== 'admin') return;
-    
-    const fetchReports = async () => {
-      setLoading(true);
-      try {
-        const [salesRes, topRes, custRes] = await Promise.all([
-          api.get('/reports/sales-summary'),
-          api.get('/reports/top-products'),
-          api.get('/reports/customer-analytics')
-        ]);
-        setSalesSummary(salesRes.data);
-        setTopProducts(topRes.data);
-        setCustomerAnalytics(custRes.data);
-      } catch (err) {
-        setError(err.friendlyMessage || err.response?.data?.message || 'Failed to load reports');
-      } finally {
-        setLoading(false);
-      }
-    };
+    setLoading(true);
+    try {
+      const [salesRes, topRes, custRes] = await Promise.all([
+        api.get('/reports/sales-summary'),
+        api.get('/reports/top-products'),
+        api.get('/reports/customer-analytics')
+      ]);
+      setSalesSummary(salesRes.data);
+      setTopProducts(topRes.data);
+      setCustomerAnalytics(custRes.data);
+      setError('');
+    } catch (err) {
+      setError(err.friendlyMessage || err.response?.data?.message || 'Failed to load reports');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchReports();
   }, [user.role]);
 
@@ -53,7 +54,12 @@ export default function Reports() {
       </nav>
 
       <div className="container">
-        <h2>📊 Analytics & Reports</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h2 style={{ margin: 0 }}>📊 Analytics & Reports</h2>
+          <button className="btn btn-outline" onClick={fetchReports} disabled={loading}>
+            {loading ? 'Refreshing...' : '🔄 Refresh Data'}
+          </button>
+        </div>
         {error && <p className="error">{error}</p>}
         {loading ? (
           <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-light)' }}>
@@ -169,4 +175,3 @@ export default function Reports() {
     </div>
   );
 }
-
