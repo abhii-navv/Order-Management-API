@@ -1,4 +1,5 @@
 require('dotenv').config();
+const crypto = require('crypto');
 const express = require('express');
 const cors = require('cors');
 const createTables = require('./src/config/createTables');
@@ -11,6 +12,15 @@ const orderRoutes = require('./src/routes/orderRoutes');
 const reportRoutes = require('./src/routes/reportRoutes');
 
 const app = express();
+
+// ── Request Tracing ────────────────────────────────────────────────────────────
+// Attach a unique request ID to every response for distributed tracing / log correlation
+app.use((req, res, next) => {
+  const requestId = req.headers['x-request-id'] || crypto.randomUUID();
+  req.requestId = requestId;
+  res.setHeader('X-Request-Id', requestId);
+  next();
+});
 
 // ── Security Middleware ────────────────────────────────────────────────────────
 // Set secure HTTP headers to prevent common web vulnerabilities (XSS, clickjacking, etc.)
