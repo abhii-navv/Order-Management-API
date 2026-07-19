@@ -1,218 +1,140 @@
-import { useEffect, useState, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import api from '../api';
-import '../styles/table.css';
+require('dotenv').config();
+const crypto = require('crypto');
+const express = require('express');
+const cors = require('cors');
+const createTables = require('./src/config/createTables');
+const seedData = require('./src/config/seedData');
 
-export default function Dashboard() {
-  const [lowStock, setLowStock]         = useState([]);
-  const [recentOrders, setRecentOrders] = useState([]);
-  const [kpis, setKpis]                 = useState(null);
-  const [loading, setLoading]           = useState(true);
-  const [error, setError]               = useState('');
-  const user     = JSON.parse(localStorage.getItem('user') || '{}');
-  const navigate = useNavigate();
+const authRoutes = require('./src/routes/authRoutes');
+const categoryRoutes = require('./src/routes/categoryRoutes');
+const productRoutes = require('./src/routes/productRoutes');
+const orderRoutes = require('./src/routes/orderRoutes');
+const reportRoutes = require('./src/routes/reportRoutes');
 
-  // Auto-dismiss error after 5s
-  useEffect(() => {
-    if (error) { const t = setTimeout(() => setError(''), 5000); return () => clearTimeout(t); }
-  }, [error]);
+const app = express();
 
-  const loadDashboard = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const ordersEndpoint = user.role === 'admin' ? '/orders' : '/orders/my';
-      const [ordersRes] = await Promise.all([
-        api.get(ordersEndpoint),
-        user.role === 'admin'
-          ? api.get('/reports/low-stock').then(r => setLowStock(r.data.products || [])).catch(() => {})
-          : Promise.resolve(),
-        user.role === 'admin'
-          ? api.get('/reports/dashboard-kpis').then(r => setKpis(r.data)).catch(() => {})
-          : Promise.resolve(),
-      ]);
-      setRecentOrders((ordersRes.data.orders || []).slice(0, 5));
-    } catch (err) {
-      setError(err.friendlyMessage || err.response?.data?.message || 'Failed to load dashboard data.');
-    } finally {
-      setLoading(false);
-    }
-  }, [user.role]);
+// ── Request Tracing ────────────────────────────────────────────────────────────
+// Attach a unique request ID to every response for distributed tracing / log correlation
+app.use((req, res, next) => {
+  const requestId = req.headers['x-request-id'] || crypto.randomUUID();
+  req.requestId = requestId;
+  res.setHeader('X-Request-Id', requestId);
+  next();
+});
 
-  useEffect(() => {
-    loadDashboard();
-  }, [loadDashboard]);
-
-  const logout = () => { localStorage.clear(); navigate('/login'); };
-
-  const kpiCards = kpis ? [
-    { label: 'Orders Today',        value: kpis.ordersToday,           icon: '📦', color: '#8b5cf6' },
-    { label: 'Revenue This Month',  value: `₹${Number(kpis.revenueThisMonth).toLocaleString()}`, icon: '💰', color: '#10b981' },
-    { label: 'Pending Orders',      value: kpis.pendingOrders,         icon: '⏳', color: '#f59e0b' },
-    { label: 'Low Stock Products',  value: kpis.lowStockProducts,      icon: '⚠️', color: '#ef4444' },
-    { label: 'New Customers',       value: kpis.newCustomersThisMonth, icon: '👤', color: '#3b82f6' },
-  ] : [];
-
-  return (
-    <div>
-      <nav className="navbar">
-        <span>📦 Inventory Manager</span>
-        <div>
-          <Link to="/products">Products</Link>
-          <Link to="/categories">Categories</Link>
-          <Link to="/orders">Orders</Link>
-          {user.role === 'admin' && <Link to="/reports">Reports</Link>}
-          {user.role === 'admin' && <Link to="/audit-logs">Audit Logs</Link>}
-          <span style={{ color: 'var(--text-light)', fontSize: '13px' }}>| {user.name} ({user.role})</span>
-          <button onClick={logout}>Logout</button>
-        </div>
-      </nav>
-      <div className="container">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <div>
-            <h2 style={{ marginBottom: '4px' }}>
-              👋 Welcome back{user.name ? `, ${user.name}` : ''}!
-            </h2>
-            <p style={{ color: 'var(--text-light)', fontSize: '13px' }}>
-              Here's what's happening with your inventory today.
-            </p>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            {loading && (
-              <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>⏳ Loading…</span>
-            )}
-            <button className="btn btn-outline" onClick={loadDashboard} disabled={loading}>
-              🔄 Refresh
-            </button>
-          </div>
-        </div>
-
-        {error && <p className="error">{error}</p>}
-
-        {/* ── KPI Cards (admin only) ── */}
-        {user.role === 'admin' && kpis && (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-            gap: '16px',
-            marginBottom: '32px',
-          }}>
-            {kpiCards.map(card => (
-              <div key={card.label} style={{
-                background: 'var(--bg-surface)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius)',
-                padding: '20px 24px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px',
-                boxShadow: 'var(--shadow)',
-                transition: 'transform 0.2s, box-shadow 0.2s',
-              }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.4)'; }}
-                onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = 'var(--shadow)'; }}
-              >
-                <span style={{ fontSize: '24px' }}>{card.icon}</span>
-                <span style={{ fontSize: '28px', fontWeight: 800, color: card.color, lineHeight: 1 }}>
-                  {card.value}
-                </span>
-                <span style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  {card.label}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="link-row" style={{ display: 'flex', gap: '10px' }}>
-          <Link to="/products" className="btn">🏷️ Products</Link>
-          <Link to="/categories" className="btn">📁 Categories</Link>
-          <Link to="/orders" className="btn">📋 Orders</Link>
-          {user.role === 'admin' && <Link to="/reports" className="btn">📊 Reports</Link>}
-          {user.role === 'admin' && <Link to="/audit-logs" className="btn">🔍 Audit Logs</Link>}
-        </div>
-
-        {user.role === 'admin' && lowStock.length > 0 && (
-          <div>
-            <h3>⚠️ Low Stock ({lowStock.length})</h3>
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>SKU</th>
-                  <th>Stock</th>
-                  <th>Threshold</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {lowStock.map(p => (
-                  <tr key={p.id}>
-                    <td><strong>{p.name}</strong></td>
-                    <td><code style={{ background: 'rgba(243,244,246,0.08)', padding: '2px 6px', borderRadius: '4px' }}>{p.sku}</code></td>
-                    <td style={{ color: '#ef4444', fontWeight: 700 }}>{p.stock_quantity}</td>
-                    <td style={{ color: 'var(--text-light)' }}>{p.low_stock_threshold}</td>
-                    <td>
-                      <Link to="/products" className="btn-sm">Restock →</Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {recentOrders.length > 0 && (
-          <div style={{ marginTop: '24px' }}>
-            <h3>🕑 Recent Orders</h3>
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Status</th>
-                  <th>Total</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentOrders.map(o => (
-                  <tr key={o.id}>
-                    <td style={{ fontWeight: 600 }}>#{o.id}</td>
-                    <td>
-                      <span style={{
-                        padding: '2px 10px',
-                        borderRadius: '99px',
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        background: o.status === 'delivered' ? 'rgba(16,185,129,0.15)' :
-                                    o.status === 'cancelled' ? 'rgba(239,68,68,0.15)' :
-                                    o.status === 'pending'   ? 'rgba(245,158,11,0.15)' :
-                                    'rgba(99,102,241,0.15)',
-                        color: o.status === 'delivered' ? '#34d399' :
-                               o.status === 'cancelled' ? '#f87171' :
-                               o.status === 'pending'   ? '#fbbf24' :
-                               '#a78bfa',
-                      }}>
-                        {o.status}
-                      </span>
-                    </td>
-                    <td style={{ fontWeight: 500 }}>₹{Number(o.total_amount).toFixed(2)}</td>
-                    <td style={{ color: 'var(--text-light)' }}>{new Date(o.created_at).toLocaleDateString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {!loading && recentOrders.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-light)', marginTop: '24px' }}>
-            <div style={{ fontSize: '36px', marginBottom: '12px' }}>📋</div>
-            <p>No orders yet. <Link to="/orders" style={{ color: 'var(--primary-light)' }}>Place your first order →</Link></p>
-          </div>
-        )}
-      </div>
-    </div>
+// ── Security Middleware ────────────────────────────────────────────────────────
+// Set secure HTTP headers to prevent common web vulnerabilities (XSS, clickjacking, etc.)
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=()');
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self'; object-src 'none';"
   );
+  next();
+});
+
+// ── CORS – restrict to known origins ──────────────────────────────────────────
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173')
+  .split(',')
+  .map(o => o.trim());
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow server-to-server requests (no origin) or whitelisted origins
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS: Origin "${origin}" not allowed`));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+// ── In-memory rate limiter (no external dep) ──────────────────────────────────
+// Limits each IP to MAX_REQUESTS per WINDOW_MS to guard against brute-force / DoS
+const WINDOW_MS = parseInt(process.env.RATE_WINDOW_MS || '60000', 10); // 1 min
+const MAX_REQUESTS = parseInt(process.env.RATE_MAX_REQUESTS || '100', 10);
+const ipHits = new Map();
+
+setInterval(() => ipHits.clear(), WINDOW_MS); // flush window every interval
+
+app.use((req, res, next) => {
+  const ip = req.ip || req.socket.remoteAddress || 'unknown';
+  const count = (ipHits.get(ip) || 0) + 1;
+  ipHits.set(ip, count);
+  if (count > MAX_REQUESTS) {
+    return res.status(429).json({
+      message: 'Too many requests — please wait before retrying.',
+      retryAfter: `${Math.ceil(WINDOW_MS / 1000)}s`,
+    });
+  }
+  next();
+});
+
+// ── Body Parsing ───────────────────────────────────────────────────────────────
+// Limit JSON body size to guard against payload-flooding attacks
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: false, limit: '1mb' }));
+
+// ── Request Logger (dev) ───────────────────────────────────────────────────────
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req, _res, next) => {
+    const ts = new Date().toISOString();
+    console.log(`[${ts}] ${req.method} ${req.originalUrl}`);
+    next();
+  });
 }
+
+// ── API Routes ─────────────────────────────────────────────────────────────────
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/categories', categoryRoutes);
+app.use('/api/v1/products', productRoutes);
+app.use('/api/v1/orders', orderRoutes);
+app.use('/api/v1/reports', reportRoutes);
+
+// ── Health Check ───────────────────────────────────────────────────────────────
+app.get('/', (req, res) => {
+  res.json({
+    message: '📦 Inventory & Order Management API is running',
+    version: process.env.npm_package_version || '1.0.0',
+    environment: process.env.NODE_ENV || 'development',
+    uptime: process.uptime(),
+  });
+});
+
+// ── 404 Handler ────────────────────────────────────────────────────────────────
+app.use((req, res) => {
+  res.status(404).json({ message: `Route not found: ${req.method} ${req.originalUrl}` });
+});
+
+// ── Global Error Handler ───────────────────────────────────────────────────────
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  const status = err.status || 500;
+  const isDev = process.env.NODE_ENV !== 'production';
+  console.error(`[ERROR ${status}]`, err.message);
+  if (isDev) console.error(err.stack);
+  res.status(status).json({
+    error: err.name || 'Error',
+    message: isDev ? err.message : 'Internal server error',
+    ...(isDev && { stack: err.stack }),
+  });
+});
+
+// ── Bootstrap ──────────────────────────────────────────────────────────────────
+const PORT = process.env.PORT || 5000;
+
+const start = async () => {
+  await createTables();
+  await seedData();
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`🛡️  CORS allowed origins: ${ALLOWED_ORIGINS.join(', ')}`);
+    console.log(`⚡  Rate limit: ${MAX_REQUESTS} req / ${WINDOW_MS / 1000}s per IP`);
+  });
+};
+
+start();
