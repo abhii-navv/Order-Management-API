@@ -208,4 +208,22 @@ const updateStatus = async (req, res) => {
   }
 };
 
-module.exports = { getAll, getMyOrders, getOne, placeOrder, updateStatus, orderValidation };
+/**
+ * GET /api/v1/orders/:id/items
+ * Returns only the line-items for a given order.
+ * Admins see any order; customers may only query their own.
+ */
+const getOrderItems = async (req, res) => {
+  try {
+    const order = await getOrderById(req.params.id);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    if (req.user.role !== 'admin' && order.user_id !== req.user.id)
+      return res.status(403).json({ message: 'Access denied' });
+    res.json({ order_id: order.id, items: order.items });
+  } catch (err) {
+    console.error('Order Error:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+module.exports = { getAll, getMyOrders, getOne, getOrderItems, placeOrder, updateStatus, orderValidation };
