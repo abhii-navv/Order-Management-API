@@ -8,7 +8,7 @@ const {
   softDeleteProduct,
   restockProduct,
 } = require('../models/Product');
-const { writeAuditLog } = require('../models/StockAuditLog');
+const { writeAuditLog, getAuditLog } = require('../models/StockAuditLog');
 
 // ── Validation ─────────────────────────────────────────────────────────────────
 
@@ -50,6 +50,15 @@ const updateProductValidation = [
     .optional()
     .isInt({ min: 0 })
     .withMessage('Low-stock threshold must be a non-negative integer'),
+];
+
+// Max units that can be added in a single restock call (configurable via env)
+const MAX_RESTOCK_QTY = parseInt(process.env.MAX_RESTOCK_QTY || '10000', 10);
+
+const restockValidation = [
+  body('quantity')
+    .isInt({ min: 1, max: MAX_RESTOCK_QTY })
+    .withMessage(`Quantity must be a positive integer (max ${MAX_RESTOCK_QTY})`),
 ];
 
 // ── Controllers ────────────────────────────────────────────────────────────────
@@ -126,10 +135,10 @@ const remove = async (req, res) => {
 };
 
 const restock = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
   const quantity = parseInt(req.body.quantity, 10);
-  if (!quantity || quantity <= 0) {
-    return res.status(400).json({ message: 'Quantity must be a positive integer' });
-  }
 
   const client = await pool.connect();
   try {
@@ -164,6 +173,25 @@ const restock = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/v1/products/:id/audit-log
+ * Returns paginated stock audit history for a given product (admin only).
+ */
+const getProductAuditLog = async (req, res) => {
+  try {
+    const product = await getProductById(req.params.id);
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+
+    const page  = parseInt(req.query.page,  10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 20;
+
+    const result = await getAuditLog({ product_id: req.params.id, page, limit });
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
 module.exports = {
   getAll,
   getOne,
@@ -171,7 +199,8 @@ module.exports = {
   update,
   remove,
   restock,
+  getProductAuditLog,
   productValidation,
   updateProductValidation,
+  restockValidation,
 };
-
